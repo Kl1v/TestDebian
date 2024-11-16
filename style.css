@@ -1,0 +1,55 @@
+body, html {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #ffffff; 
+    color: #000000;
+}
+header {
+    padding: 50px 20px;
+    background-color: #ffffff87; 
+}
+
+.logo img {
+    width: 150px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 4em;
+    color: #FFC700; 
+    margin-bottom: 30px;
+}
+
+.dates {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-bottom: 40px;
+}
+
+.location h2 {
+    font-size: 2em;
+    color: #515151;
+}
+
+.location p {
+    font-size: 1.5em;
+    color: #000000; 
+}
+
+.cta-button {
+    display: inline-block;
+    padding: 15px 30px;
+    background-color: #FFC700; 
+    color: #000000; 
+    text-decoration: none;
+    font-size: 1.2em;
+    border-radius: 30px;
+    transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+    background-color: #E6B800; 
+}
