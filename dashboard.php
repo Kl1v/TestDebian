@@ -22,8 +22,6 @@ $user_id = $_SESSION['user_id'];
 $sql = "SELECT balance FROM users WHERE id = $user_id";
 $result = $conn->query($sql);
 $balance = $result->fetch_assoc()['balance'];
-
-// Live-Daten zu Rennen über Socket.IO
 ?>
 
 <!DOCTYPE html>
@@ -34,7 +32,7 @@ $balance = $result->fetch_assoc()['balance'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Casino Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 
 <body>
@@ -46,6 +44,7 @@ $balance = $result->fetch_assoc()['balance'];
         <div id="live-race">
             <h2>Live-Pferderennen</h2>
             <div id="race-info">Warten auf das nächste Rennen...</div>
+            <button onclick="placeBet()">Wette platzieren</button>
         </div>
         <h3>Wette platzieren</h3>
         <select id="bet-choice">
@@ -64,11 +63,18 @@ $balance = $result->fetch_assoc()['balance'];
     <script>
     const socket = io('http://localhost:3000');
 
+    // Echtzeit-Updates vom Rennen
     socket.on('raceUpdate', (data) => {
-        document.getElementById('race-info').innerHTML = `
-            <p>Rennen läuft...</p>
-            <p>Positionen: ${data.positions}</p>
-        `;
+        if (data.raceInProgress) {
+            document.getElementById('race-info').innerHTML = `
+                <p>Rennen läuft...</p>
+                <p>Positionen: ${data.raceResults.join(', ')}</p>
+            `;
+        } else {
+            document.getElementById('race-info').innerHTML = `
+                <p>Kein Rennen im Moment. Warten auf das nächste Rennen...</p>
+            `;
+        }
     });
 
     socket.on('raceEnd', (data) => {
@@ -76,16 +82,24 @@ $balance = $result->fetch_assoc()['balance'];
             <p>Rennen beendet!</p>
             <p>Ergebnisse:</p>
             <ol>
-                <li>${data.results[0]}</li>
-                <li>${data.results[1]}</li>
-                <li>${data.results[2]}</li>
+                <li>${data.raceResults[0]}</li>
+                <li>${data.raceResults[1]}</li>
+                <li>${data.raceResults[2]}</li>
+                <li>${data.raceResults[3]}</li>
             </ol>
         `;
     });
 
+    // Wette platzieren
     function placeBet() {
         const choice = document.getElementById('bet-choice').value;
         const amount = document.getElementById('bet-amount').value;
+
+        if (amount > <?= $balance ?>) {
+            alert("Du hast nicht genug Guthaben!");
+            return;
+        }
+
         fetch('place_bet.php', {
             method: 'POST',
             headers: {

@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 $host = "193.154.207.221";
 $username = "kremsguesser";
 $password = "123mysql";
@@ -11,30 +12,29 @@ if ($conn->connect_error) {
 }
 
 $user_id = $_SESSION['user_id'];
-$race_id = $_POST['race_id'];
 $bet_choice = $_POST['bet_choice'];
 $bet_amount = $_POST['bet_amount'];
 
-// Benutzerbalance prüfen
+// Benutzerguthaben abfragen
 $sql = "SELECT balance FROM users WHERE id = $user_id";
 $result = $conn->query($sql);
 $row = $result->fetch_assoc();
+$balance = $row['balance'];
 
-if ($row['balance'] >= $bet_amount) {
-    // Guthaben aktualisieren und Wette platzieren
-    $sql = "UPDATE users SET balance = balance - $bet_amount WHERE id = $user_id";
-    $conn->query($sql);
-
-    $sql = "INSERT INTO bets (user_id, race_id, bet_choice, amount) 
-            VALUES ($user_id, $race_id, '$bet_choice', $bet_amount)";
-    if ($conn->query($sql) === TRUE) {
-        echo "Wette erfolgreich platziert.";
-    } else {
-        echo "Fehler: " . $conn->error;
-    }
-} else {
-    echo "Nicht genügend Guthaben.";
+// Prüfen, ob der Benutzer genug Guthaben hat
+if ($bet_amount > $balance) {
+    echo "Du hast nicht genug Guthaben!";
+    exit();
 }
 
-$conn->close();
+// Wette speichern
+$sql = "INSERT INTO bets (user_id, bet_choice, bet_amount) VALUES ($user_id, '$bet_choice', $bet_amount)";
+$conn->query($sql);
+
+// Guthaben aktualisieren
+$new_balance = $balance - $bet_amount;
+$sql = "UPDATE users SET balance = $new_balance WHERE id = $user_id";
+$conn->query($sql);
+
+echo "Wette auf $bet_choice in Höhe von $bet_amount € erfolgreich platziert!";
 ?>
