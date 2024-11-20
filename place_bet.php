@@ -1,40 +1,48 @@
 <?php
 session_start();
+require 'db.php';
 
-$host = "193.154.207.221";
-$username = "kremsguesser";
-$password = "123mysql";
-$dbname = "OnlineCasino";
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Verbindung fehlgeschlagen: " . $conn->connect_error);
+if (!isset($_SESSION['user_id'])) {
+    die("Nicht eingeloggt.");
 }
 
-$user_id = $_SESSION['user_id'];
-$bet_choice = $_POST['bet_choice'];
-$bet_amount = $_POST['bet_amount'];
+$userId = $_SESSION['user_id'];
+$betChoice = $_POST['bet_choice'];
+$betAmount = $_POST['bet_amount'];
 
-// Benutzerguthaben abfragen
-$sql = "SELECT balance FROM users WHERE id = $user_id";
-$result = $conn->query($sql);
-$row = $result->fetch_assoc();
-$balance = $row['balance'];
+// Guthaben prüfen
+$stmt = $pdo->prepare("SELECT balance FROM users WHERE id = :user_id");
+$stmt->execute(['user_id' => $userId]);
+$balance = $stmt->fetchColumn();
 
-// Prüfen, ob der Benutzer genug Guthaben hat
-if ($bet_amount > $balance) {
-    echo "Du hast nicht genug Guthaben!";
-    exit();
+if ($betAmount > $balance) {
+    die("Nicht genug Guthaben.");
+}
+
+// Aktuelles Rennen abrufen
+$stmt = $pdo->prepare("SELECT * FROM horse_races WHERE race_time > NOW() ORDER BY race_time ASC LIMIT 1");
+$stmt->execute();
+$currentRace = $stmt->fetch();
+
+if (!$currentRace) {
+    die("Kein Rennen verfügbar.");
 }
 
 // Wette speichern
-$sql = "INSERT INTO bets (user_id, bet_choice, bet_amount) VALUES ($user_id, '$bet_choice', $bet_amount)";
-$conn->query($sql);
+$stmt = $pdo->prepare("INSERT INTO bets (user_id, race_id, bet_choice, amount) VALUES (:user_id, :race_id, :bet_choice, :amount)");
+$stmt->execute([
+    'user_id' => $userId,
+    'race_id' => $currentRace['id'],
+    'bet_choice' => $betChoice,
+    'amount' => $betAmount
+]);
 
 // Guthaben aktualisieren
-$new_balance = $balance - $bet_amount;
-$sql = "UPDATE users SET balance = $new_balance WHERE id = $user_id";
-$conn->query($sql);
+$stmt = $pdo->prepare("UPDATE users SET balance = balance - :amount WHERE id = :user_id");
+$stmt->execute([
+    'amount' => $betAmount,
+    'user_id' => $userId
+]);
 
-echo "Wette auf $bet_choice in Höhe von $bet_amount € erfolgreich platziert!";
+echo "Wette auf $betChoice für $betAmount € erfolgreich platziert!";
 ?>
